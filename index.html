@@ -3,114 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minha Loja Simples</title>
+    <title>Minha Loja Online - Destaques</title>
+    
     <style>
-        /* CSS Básico */
-        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f9; }
-        .container { display: flex; gap: 30px; }
-        .produtos { flex: 2; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-        .produto-card { background-color: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .produto-card h3 { margin-top: 0; color: #333; }
-        .produto-card p { color: #555; }
-        .produto-card button { background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; transition: background-color 0.3s; }
-        .produto-card button:hover { background-color: #0056b3; }
-
-        .carrinho { flex: 1; background-color: #e9ecef; padding: 20px; border-radius: 8px; height: fit-content; }
-        .item-carrinho { display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px dashed #ccc; }
-        .total { font-weight: bold; margin-top: 15px; font-size: 1.2em; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        header {
+            background-color: #007bff;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            border-bottom: 5px solid #0056b3;
+        }
+        nav {
+            background-color: #333;
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 0 15px;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            overflow: hidden;
+        }
+        .produto-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .produto-card {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        }
+        .produto-card img {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 10px;
+        }
+        .produto-card h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        .preco {
+            font-size: 1.5em;
+            color: #28a745;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .btn-comprar {
+            display: inline-block;
+            background-color: #ffc107;
+            color: #333;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+        .btn-comprar:hover {
+            background-color: #e0a800;
+        }
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+            margin-top: 30px;
+        }
     </style>
 </head>
 <body>
 
-    <h1>🛍️ Minha Loja Simples</h1>
+    <header>
+        <h1>🛍️ Minha Loja Fantástica</h1>
+        <p>Os melhores produtos, os melhores preços!</p>
+    </header>
+
+    <nav>
+        <a href="#">Início</a>
+        <a href="#">Produtos</a>
+        <a href="#">Sobre Nós</a>
+        <a href="#">Contato</a>
+    </nav>
 
     <div class="container">
-        <div class="produtos" id="lista-produtos">
+        <h2>🔥 Produtos em Destaque</h2>
+
+        <div class="produto-grid">
+            
+            <div class="produto-card">
+                <img src="https://via.placeholder.com/300x200?text=Produto+1" alt="Nome do Produto 1">
+                <h3>Smartphone Ultra</h3>
+                <p>O melhor em tecnologia, com câmera de alta resolução.</p>
+                <div class="preco">R$ 1.999,00</div>
+                <a href="#" class="btn-comprar">Comprar Agora</a>
             </div>
 
-        <div class="carrinho">
-            <h2>🛒 Seu Carrinho</h2>
-            <div id="itens-carrinho">
-                <p>O carrinho está vazio.</p>
+            <div class="produto-card">
+                <img src="https://via.placeholder.com/300x200?text=Produto+2" alt="Nome do Produto 2">
+                <h3>Fones de Ouvido Pro</h3>
+                <p>Áudio imersivo e cancelamento de ruído ativo.</p>
+                <div class="preco">R$ 399,90</div>
+                <a href="#" class="btn-comprar">Comprar Agora</a>
             </div>
-            <div class="total">
-                Total: <span id="carrinho-total">R$ 0.00</span>
+            
+            <div class="produto-card">
+                <img src="https://via.placeholder.com/300x200?text=Produto+3" alt="Nome do Produto 3">
+                <h3>Notebook Leve</h3>
+                <p>Perfeito para trabalho e estudo. Performance e portabilidade.</p>
+                <div class="preco">R$ 3.500,00</div>
+                <a href="#" class="btn-comprar">Comprar Agora</a>
             </div>
+
+            <div class="produto-card">
+                <img src="https://via.placeholder.com/300x200?text=Produto+4" alt="Nome do Produto 4">
+                <h3>Cadeira Gamer</h3>
+                <p>Conforto máximo para longas sessões de jogos.</p>
+                <div class="preco">De <s style="color: red;">R$ 899,00</s> por R$ 749,90</div>
+                <a href="#" class="btn-comprar">Comprar Agora</a>
+            </div>
+
         </div>
     </div>
 
-    <script>
-        // Array de Produtos
-        const produtos = [
-            { id: 1, nome: "Camiseta Código", preco: 59.90 },
-            { id: 2, nome: "Caneca Geek", preco: 29.50 },
-            { id: 3, nome: "Mousepad Dev", preco: 35.00 },
-            { id: 4, nome: "Livro de Programação", preco: 89.90 }
-        ];
+    <footer>
+        <p>&copy; 2025 Minha Loja Fantástica. Todos os direitos reservados.</p>
+    </footer>
 
-        let carrinho = [];
-
-        const listaProdutos = document.getElementById('lista-produtos');
-        const itensCarrinhoDiv = document.getElementById('itens-carrinho');
-        const carrinhoTotalSpan = document.getElementById('carrinho-total');
-
-        // 1. Renderiza os produtos na página
-        function renderizarProdutos() {
-            listaProdutos.innerHTML = '';
-            produtos.forEach(produto => {
-                const card = document.createElement('div');
-                card.className = 'produto-card';
-                card.innerHTML = `
-                    <h3>${produto.nome}</h3>
-                    <p>R$ ${produto.preco.toFixed(2).replace('.', ',')}</p>
-                    <button onclick="adicionarAoCarrinho(${produto.id})">Adicionar ao Carrinho</button>
-                `;
-                listaProdutos.appendChild(card);
-            });
-        }
-
-        // 2. Adiciona um produto ao carrinho
-        function adicionarAoCarrinho(produtoId) {
-            const produto = produtos.find(p => p.id === produtoId);
-            const itemExistente = carrinho.find(item => item.id === produtoId);
-
-            if (itemExistente) {
-                itemExistente.quantidade++;
-            } else {
-                carrinho.push({ ...produto, quantidade: 1 });
-            }
-            renderizarCarrinho();
-        }
-
-        // 3. Renderiza o carrinho e calcula o total
-        function renderizarCarrinho() {
-            if (carrinho.length === 0) {
-                itensCarrinhoDiv.innerHTML = '<p>O carrinho está vazio.</p>';
-                carrinhoTotalSpan.textContent = 'R$ 0.00';
-                return;
-            }
-
-            let total = 0;
-            itensCarrinhoDiv.innerHTML = '';
-
-            carrinho.forEach(item => {
-                const subtotal = item.preco * item.quantidade;
-                total += subtotal;
-
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'item-carrinho';
-                itemDiv.innerHTML = `
-                    <span>${item.nome} (${item.quantidade}x)</span>
-                    <span>R$ ${subtotal.toFixed(2).replace('.', ',')}</span>
-                `;
-                itensCarrinhoDiv.appendChild(itemDiv);
-            });
-
-            carrinhoTotalSpan.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
-        }
-
-        // Inicializa a loja
-        renderizarProdutos();
-    </script>
 </body>
 </html>
