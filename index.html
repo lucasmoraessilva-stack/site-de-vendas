@@ -1,147 +1,189 @@
+loja-online/
+│
+├── server.js              # Servidor Node.js (back-end)
+├── db.js                  # Banco de dados SQLite
+├── package.json           
+│
+├── public/                # Arquivos estáticos (front-end)
+│   ├── index.html         # Página principal
+│   ├── style.css          # Estilo
+│   ├── script.js          # Lógica do front-end
+│
+└── views/                 # Páginas adicionais (opcional)
+{
+  "name": "loja-online",
+  "version": "1.0.0",
+  "description": "Site de vendas completo com Node.js e SQLite",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "sqlite3": "^5.1.6",
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5"
+  }
+}
+const sqlite3 = require("sqlite3").verbose();
+const db = new sqlite3.Database("./loja.db");
+
+// Cria tabelas se não existirem
+db.serialize(() => {
+  db.run(`CREATE TABLE IF NOT EXISTS produtos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nome TEXT,
+      descricao TEXT,
+      preco REAL,
+      imagem TEXT
+  )`);
+
+  // Produtos de exemplo
+  db.run(`INSERT INTO produtos (nome, descricao, preco, imagem)
+          VALUES ('Camiseta Básica', 'Camiseta 100% algodão', 49.90, '/img/camiseta.jpg')`);
+  db.run(`INSERT INTO produtos (nome, descricao, preco, imagem)
+          VALUES ('Tênis Esportivo', 'Tênis confortável para corrida', 199.90, '/img/tenis.jpg')`);
+});
+
+module.exports = db;
+const express = require("express");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+const db = require("./db");
+
+const app = express();
+app.use(cors());
+app.use(bodyParser.json());
+app.use(express.static("public"));
+
+// Listar produtos
+app.get("/api/produtos", (req, res) => {
+  db.all("SELECT * FROM produtos", (err, rows) => {
+    if (err) res.status(500).json({ erro: err });
+    else res.json(rows);
+  });
+});
+
+// Adicionar produto (painel admin futuro)
+app.post("/api/produtos", (req, res) => {
+  const { nome, descricao, preco, imagem } = req.body;
+  db.run(
+    "INSERT INTO produtos (nome, descricao, preco, imagem) VALUES (?, ?, ?, ?)",
+    [nome, descricao, preco, imagem],
+    function (err) {
+      if (err) res.status(500).json({ erro: err });
+      else res.json({ id: this.lastID });
+    }
+  );
+});
+
+const PORT = 3000;
+app.listen(PORT, () => console.log(`🚀 Servidor rodando em http://localhost:${PORT}`));
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minha Loja Online - Destaques</title>
-    
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-            color: #333;
-        }
-        header {
-            background-color: #007bff;
-            color: white;
-            padding: 20px 0;
-            text-align: center;
-            border-bottom: 5px solid #0056b3;
-        }
-        nav {
-            background-color: #333;
-            color: white;
-            padding: 10px 0;
-            text-align: center;
-        }
-        nav a {
-            color: white;
-            text-decoration: none;
-            padding: 0 15px;
-        }
-        .container {
-            width: 80%;
-            margin: 20px auto;
-            overflow: hidden;
-        }
-        .produto-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-        }
-        .produto-card {
-            background: white;
-            border: 1px solid #ddd;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
-        }
-        .produto-card img {
-            max-width: 100%;
-            height: auto;
-            margin-bottom: 10px;
-        }
-        .produto-card h3 {
-            margin-top: 0;
-            color: #007bff;
-        }
-        .preco {
-            font-size: 1.5em;
-            color: #28a745;
-            font-weight: bold;
-            margin: 10px 0;
-        }
-        .btn-comprar {
-            display: inline-block;
-            background-color: #ffc107;
-            color: #333;
-            padding: 10px 20px;
-            text-decoration: none;
-            border-radius: 5px;
-            margin-top: 10px;
-            transition: background-color 0.3s;
-        }
-        .btn-comprar:hover {
-            background-color: #e0a800;
-        }
-        footer {
-            background-color: #333;
-            color: white;
-            text-align: center;
-            padding: 15px 0;
-            margin-top: 30px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loja Online</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <header>
+    <h1>🛒 Minha Loja Online</h1>
+  </header>
 
-    <header>
-        <h1>🛍️ Minha Loja Fantástica</h1>
-        <p>Os melhores produtos, os melhores preços!</p>
-    </header>
+  <main id="produtos-container"></main>
 
-    <nav>
-        <a href="#">Início</a>
-        <a href="#">Produtos</a>
-        <a href="#">Sobre Nós</a>
-        <a href="#">Contato</a>
-    </nav>
+  <footer>
+    <p>© 2025 - Loja Online Exemplo</p>
+  </footer>
 
-    <div class="container">
-        <h2>🔥 Produtos em Destaque</h2>
-
-        <div class="produto-grid">
-            
-            <div class="produto-card">
-                <img src="https://via.placeholder.com/300x200?text=Produto+1" alt="Nome do Produto 1">
-                <h3>Smartphone Ultra</h3>
-                <p>O melhor em tecnologia, com câmera de alta resolução.</p>
-                <div class="preco">R$ 1.999,00</div>
-                <a href="#" class="btn-comprar">Comprar Agora</a>
-            </div>
-
-            <div class="produto-card">
-                <img src="https://via.placeholder.com/300x200?text=Produto+2" alt="Nome do Produto 2">
-                <h3>Fones de Ouvido Pro</h3>
-                <p>Áudio imersivo e cancelamento de ruído ativo.</p>
-                <div class="preco">R$ 399,90</div>
-                <a href="#" class="btn-comprar">Comprar Agora</a>
-            </div>
-            
-            <div class="produto-card">
-                <img src="https://via.placeholder.com/300x200?text=Produto+3" alt="Nome do Produto 3">
-                <h3>Notebook Leve</h3>
-                <p>Perfeito para trabalho e estudo. Performance e portabilidade.</p>
-                <div class="preco">R$ 3.500,00</div>
-                <a href="#" class="btn-comprar">Comprar Agora</a>
-            </div>
-
-            <div class="produto-card">
-                <img src="https://via.placeholder.com/300x200?text=Produto+4" alt="Nome do Produto 4">
-                <h3>Cadeira Gamer</h3>
-                <p>Conforto máximo para longas sessões de jogos.</p>
-                <div class="preco">De <s style="color: red;">R$ 899,00</s> por R$ 749,90</div>
-                <a href="#" class="btn-comprar">Comprar Agora</a>
-            </div>
-
-        </div>
-    </div>
-
-    <footer>
-        <p>&copy; 2025 Minha Loja Fantástica. Todos os direitos reservados.</p>
-    </footer>
-
+  <script src="script.js"></script>
 </body>
 </html>
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #f8f8f8;
+}
+
+header {
+  background: #007bff;
+  color: white;
+  text-align: center;
+  padding: 1em;
+}
+
+#produtos-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 2em;
+}
+
+.produto {
+  background: white;
+  margin: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  width: 250px;
+  text-align: center;
+  padding: 10px;
+}
+
+.produto img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+button {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #218838;
+}
+async function carregarProdutos() {
+  const res = await fetch("/api/produtos");
+  const produtos = await res.json();
+
+  const container = document.getElementById("produtos-container");
+  container.innerHTML = "";
+
+  produtos.forEach((p) => {
+    const card = document.createElement("div");
+    card.className = "produto";
+    card.innerHTML = `
+      <img src="${p.imagem}" alt="${p.nome}">
+      <h3>${p.nome}</h3>
+      <p>${p.descricao}</p>
+      <strong>R$ ${p.preco.toFixed(2)}</strong>
+      <br/>
+      <button onclick="adicionarAoCarrinho('${p.nome}', ${p.preco})">Adicionar</button>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function adicionarAoCarrinho(nome, preco) {
+  alert(`✅ ${nome} adicionado ao carrinho por R$${preco.toFixed(2)}!`);
+}
+
+carregarProdutos();
+# 1. Criar o projeto
+mkdir loja-online && cd loja-online
+
+# 2. Salvar os arquivos acima
+
+# 3. Instalar dependências
+npm install
+
+# 4. Rodar o servidor
+npm start
