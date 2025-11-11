@@ -1,54 +1,26 @@
 loja-online/
 │
-├── server.js              # Servidor Node.js (back-end)
-├── db.js                  # Banco de dados SQLite
-├── package.json           
+├── server.js              # Back-end com rotas de API e Stripe
+├── db.js                  # Banco SQLite
+├── .env                   # Chave da API Stripe
 │
-├── public/                # Arquivos estáticos (front-end)
-│   ├── index.html         # Página principal
-│   ├── style.css          # Estilo
-│   ├── script.js          # Lógica do front-end
+├── public/
+│   ├── index.html         # Página da loja
+│   ├── carrinho.html      # Página do carrinho
+│   ├── admin.html         # Painel administrativo
+│   ├── style.css
+│   ├── script.js          # Loja
+│   ├── carrinho.js        # Lógica do carrinho
+│   └── admin.js           # Painel admin
 │
-└── views/                 # Páginas adicionais (opcional)
-{
-  "name": "loja-online",
-  "version": "1.0.0",
-  "description": "Site de vendas completo com Node.js e SQLite",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "express": "^4.19.2",
-    "sqlite3": "^5.1.6",
-    "body-parser": "^1.20.3",
-    "cors": "^2.8.5"
-  }
-}
-const sqlite3 = require("sqlite3").verbose();
-const db = new sqlite3.Database("./loja.db");
-
-// Cria tabelas se não existirem
-db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS produtos (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nome TEXT,
-      descricao TEXT,
-      preco REAL,
-      imagem TEXT
-  )`);
-
-  // Produtos de exemplo
-  db.run(`INSERT INTO produtos (nome, descricao, preco, imagem)
-          VALUES ('Camiseta Básica', 'Camiseta 100% algodão', 49.90, '/img/camiseta.jpg')`);
-  db.run(`INSERT INTO produtos (nome, descricao, preco, imagem)
-          VALUES ('Tênis Esportivo', 'Tênis confortável para corrida', 199.90, '/img/tenis.jpg')`);
-});
-
-module.exports = db;
+└── package.json
+npm install stripe dotenv
+STRIPE_SECRET_KEY=sk_test_sla
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const db = require("./db");
 
 const app = express();
@@ -56,7 +28,7 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static("public"));
 
-// Listar produtos
+// Rotas da API
 app.get("/api/produtos", (req, res) => {
   db.all("SELECT * FROM produtos", (err, rows) => {
     if (err) res.status(500).json({ erro: err });
@@ -64,7 +36,6 @@ app.get("/api/produtos", (req, res) => {
   });
 });
 
-// Adicionar produto (painel admin futuro)
 app.post("/api/produtos", (req, res) => {
   const { nome, descricao, preco, imagem } = req.body;
   db.run(
@@ -77,79 +48,100 @@ app.post("/api/produtos", (req, res) => {
   );
 });
 
+app.delete("/api/produtos/:id", (req, res) => {
+  db.run("DELETE FROM produtos WHERE id = ?", [req.params.id], function (err) {
+    if (err) res.status(500).json({ erro: err });
+    else res.json({ sucesso: true });
+  });
+});
+
+// Pagamento com Stripe
+app.post("/api/pagar", async (req, res) => {
+  const { items } = req.body;
+
+  const lineItems = items.map((item) => ({
+    price_data: {
+      currency: "brl",
+      product_data: { name: item.nome },
+      unit_amount: Math.round(item.preco * 100),
+    },
+    quantity: item.quantidade,
+  }));
+
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    mode: "payment",
+    line_items: lineItems,
+    success_url: "http://localhost:3000/sucesso.html",
+    cancel_url: "http://localhost:3000/carrinho.html",
+  });
+
+  res.json({ url: session.url });
+});
+
 const PORT = 3000;
-app.listen(PORT, () => console.log(`🚀 Servidor rodando em http://localhost:${PORT}`));
+app.listen(PORT, () =>
+  console.log(`🚀 Servidor rodando em http://localhost:${PORT}`)
+);
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Loja Online</title>
+  <title>Carrinho de Compras</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
-    <h1>🛒 Minha Loja Online</h1>
-  </header>
+  <header><h1>🛒 Carrinho</h1></header>
 
-  <main id="produtos-container"></main>
+  <main>
+    <div id="lista-carrinho"></div>
+    <h3 id="total"></h3>
+    <button id="btn-pagar">Finalizar Compra</button>
+  </main>
 
-  <footer>
-    <p>© 2025 - Loja Online Exemplo</p>
-  </footer>
-
-  <script src="script.js"></script>
+  <script src="carrinho.js"></script>
 </body>
 </html>
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  background: #f8f8f8;
+let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
+
+function atualizarCarrinho() {
+  const lista = document.getElementById("lista-carrinho");
+  lista.innerHTML = "";
+
+  let total = 0;
+
+  carrinho.forEach((item, i) => {
+    total += item.preco * item.quantidade;
+    lista.innerHTML += `
+      <div class="produto">
+        <h3>${item.nome}</h3>
+        <p>R$ ${item.preco.toFixed(2)} x ${item.quantidade}</p>
+        <button onclick="removerItem(${i})">Remover</button>
+      </div>
+    `;
+  });
+
+  document.getElementById("total").innerText = `Total: R$ ${total.toFixed(2)}`;
 }
 
-header {
-  background: #007bff;
-  color: white;
-  text-align: center;
-  padding: 1em;
+function removerItem(index) {
+  carrinho.splice(index, 1);
+  localStorage.setItem("carrinho", JSON.stringify(carrinho));
+  atualizarCarrinho();
 }
 
-#produtos-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  padding: 2em;
-}
+document.getElementById("btn-pagar").addEventListener("click", async () => {
+  const res = await fetch("/api/pagar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items: carrinho }),
+  });
 
-.produto {
-  background: white;
-  margin: 10px;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  width: 250px;
-  text-align: center;
-  padding: 10px;
-}
+  const data = await res.json();
+  window.location.href = data.url;
+});
 
-.produto img {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-}
-
-button {
-  background: #28a745;
-  color: white;
-  border: none;
-  padding: 10px;
-  margin-top: 10px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-button:hover {
-  background: #218838;
-}
+atualizarCarrinho();
 async function carregarProdutos() {
   const res = await fetch("/api/produtos");
   const produtos = await res.json();
@@ -173,17 +165,78 @@ async function carregarProdutos() {
 }
 
 function adicionarAoCarrinho(nome, preco) {
-  alert(`✅ ${nome} adicionado ao carrinho por R$${preco.toFixed(2)}!`);
+  let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
+  const item = carrinho.find((i) => i.nome === nome);
+  if (item) item.quantidade++;
+  else carrinho.push({ nome, preco, quantidade: 1 });
+  localStorage.setItem("carrinho", JSON.stringify(carrinho));
+  alert(`✅ ${nome} adicionado ao carrinho!`);
 }
 
 carregarProdutos();
-# 1. Criar o projeto
-mkdir loja-online && cd loja-online
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Painel Admin</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header><h1>⚙️ Painel Administrativo</h1></header>
 
-# 2. Salvar os arquivos acima
+  <main>
+    <h2>Adicionar Produto</h2>
+    <input id="nome" placeholder="Nome" />
+    <input id="descricao" placeholder="Descrição" />
+    <input id="preco" type="number" placeholder="Preço" />
+    <input id="imagem" placeholder="URL da Imagem" />
+    <button onclick="adicionarProduto()">Salvar</button>
 
-# 3. Instalar dependências
-npm install
+    <h2>Produtos</h2>
+    <div id="lista-produtos"></div>
+  </main>
 
-# 4. Rodar o servidor
-npm start
+  <script src="admin.js"></script>
+</body>
+</html>
+async function listarProdutos() {
+  const res = await fetch("/api/produtos");
+  const produtos = await res.json();
+  const lista = document.getElementById("lista-produtos");
+
+  lista.innerHTML = produtos
+    .map(
+      (p) => `
+    <div class="produto">
+      <h3>${p.nome}</h3>
+      <p>${p.descricao}</p>
+      <strong>R$ ${p.preco.toFixed(2)}</strong>
+      <br/>
+      <button onclick="removerProduto(${p.id})">Excluir</button>
+    </div>`
+    )
+    .join("");
+}
+
+async function adicionarProduto() {
+  const nome = document.getElementById("nome").value;
+  const descricao = document.getElementById("descricao").value;
+  const preco = parseFloat(document.getElementById("preco").value);
+  const imagem = document.getElementById("imagem").value;
+
+  await fetch("/api/produtos", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nome, descricao, preco, imagem }),
+  });
+
+  listarProdutos();
+}
+
+async function removerProduto(id) {
+  await fetch(`/api/produtos/${id}`, { method: "DELETE" });
+  listarProdutos();
+}
+
+listarProdutos();
+
